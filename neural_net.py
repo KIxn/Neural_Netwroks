@@ -158,7 +158,7 @@ if __name__ == '__main__':
     print('\n')
     print('Training Error: ' + str(train_error[0]+1))
 
-    #3h
+    # 3h
     valid0, valid1 = GenerateData()
     validData = formatData(valid0, valid1)
     valid_error = 0
@@ -184,3 +184,9 @@ if __name__ == '__main__':
             pred = 1
             actual = inp[2]
             matr[pred][actual] += 1
+
+    print('\n')
+    print('Confusion Matrix:')
+    print(matr)
+    print('Training Error: ' + str(train_error[0]+1))
+    print('Validation Error: ' + str(valid_error[0] + 1))
