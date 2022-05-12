@@ -39,10 +39,10 @@ def sig(x):
     return(ans)
 
 
-def forwardProp(T1, T2, x):
-    a1 = np.insert(x, 0, 1)
-    a2 = sig(np.insert(np.matmul(T1, a1), 0, 1))
-    a3 = sig(np.matmul(np.reshape(T2, (1, 3)), a2))
+def forwardProp(T1, T2, x,numofnodes):
+    a1 = np.array(x)
+    a2 = sig(np.matmul(np.reshape(T1, (numofnodes,2) ) , a1 ))
+    a3 = sig(np.matmul(np.reshape(T2, (1, numofnodes)), a2))
     return(a1, a2, a3)
 
 
@@ -52,26 +52,28 @@ def backwardProp(a2, a3, T2, y):
     return(g2, g3)
 
 
-def incrementGrad(grad, a1, a2, g2, g3):
+def incrementGrad(grad, a1, a2, g2, g3,numofnodes):
     # TODO g2*a1 needs to resolve to a scalar
+
     grad[0] = grad[0] + \
-        g2.dot(np.reshape(a1, (3, 1)))
+        np.reshape(g2, (numofnodes,1)).dot(np.reshape(a1, (1, 2)))
     grad[1] = grad[1] + g3*a2
 
     return(grad)
 
 
-def updateWeight(T1, T2, grad, alpha):
-    T1 = T1 - (alpha*grad[0])  # [0][0][0[]0[0][0]0[0[0]0[0]0[]]]
+def updateWeight(T1, T2, grad, alpha, numofnodes):
+
+    T1 = T1 - (alpha*np.reshape(grad[0] , (2,numofnodes)  ))  # [0][0][0[]0[0][0]0[0[0]0[0]0[]]]
     T2 = T2 - (alpha*grad[1])
     return(T1, T2)
 
 
-def epoch(x, T1, T2, deltas, y):
-    a1, a2, a3 = forwardProp(T1, T2, x)
+def epoch(x, T1, T2, deltas, y,numofnodes):
+    a1, a2, a3 = forwardProp(T1, T2, x,numofnodes)
 
     g2, g3 = backwardProp(a2, a3, T2, y)
-    grads = incrementGrad(deltas, a1, a2, g2, g3)
+    grads = incrementGrad(deltas, a1, a2, g2, g3, numofnodes)
     return grads, g3
 
 
@@ -89,48 +91,19 @@ def formatData(class0, class1):
 
 if __name__ == '__main__':
     class0, class1 = GenerateData()
-    # question 2
-    #plot(class0, class1)
+    # plot(class0,class1)
+
+    numofnodes = 15
+
+
 
     # set weights
-    T1 = np.random.rand(2, 3)
-    T2 = np.random.rand(1, 3)
+    T1 = np.random.rand(2, numofnodes)
+    T2 = np.random.rand(1, numofnodes)
     data = formatData(class0, class1)
 
-    # 3b
-    a1, a2, a3 = forwardProp(T1, T2, [data[4][0], data[4][1]])
-    print('Forward Propagation:')
-    print('a1: ' + str(a1))
-    print('a2: ' + str(a2))
-    print('a3: ' + str(a3))
-
-    # 3c
-    g2, g3 = backwardProp(a2, a3, T2, data[4][2])
-    print('\n')
-    print('Backward Propagation:')
-    print('g3: ' + str(g3))
-    print('g2: ' + str(g2[0]))
-
     grad = [0, 0]
-
-    # 3e
-    grad = incrementGrad(grad, a1, a2, g2, g3)
-    print('\n')
-    print('Gradient Cumputation:')
-    print('grad: ' + str(grad))
-
-    # 3f
-    print('\n')
-    print('Original Weights:')
-    print('Θ1: ' + str(T1))
-    print('Θ2: ' + str(T2))
-    T1, T2 = updateWeight(T1, T2, grad, 0.1)
-    print('Updated Weights:')
-    print('Θ1: ' + str(T1))
-    print('Θ2: ' + str(T2))
-
     # training model
-    # 3g
     eps = 0.05
 
     theta_prev = T2
@@ -142,23 +115,19 @@ if __name__ == '__main__':
         # 1epoch
 
         for inp in data:
-            grad, train_error = epoch([inp[0], inp[1]], T1, T2, grad, inp[2])
+            grad, train_error = epoch([inp[0], inp[1]], T1, T2, grad, inp[2],numofnodes)
 
         # update weights
         grad[0] *= 1/100
         grad[1] *= 1/100
 
-        T1, T2 = updateWeight(T1, T2, grad, alpha)
+        T1, T2 = updateWeight(T1, T2, grad, alpha,numofnodes)
 
         if (np.linalg.norm(T2 - theta_prev) < eps):
             break
 
         theta_prev = T2
 
-    print('\n')
-    print('Training Error: ' + str(train_error[0]+1))
-
-    # 3h
     valid0, valid1 = GenerateData()
     validData = formatData(valid0, valid1)
     valid_error = 0
@@ -166,27 +135,43 @@ if __name__ == '__main__':
     valclass0 = []
     valclass1 = []
 
-    # confusion matrix
-    matr = np.array([[0, 0], [0, 0]])
-
     for inp in validData:
-        a1, a2, a3 = forwardProp(T1, T2, [inp[0], inp[1]])
+        a1, a2, a3 = forwardProp(T1, T2, [inp[0], inp[1]],numofnodes)
         tmp, valid_error = backwardProp(a2, a3, T2, inp[2])
 
         if (a3 < 0.5):
             valclass0 += [a3]
-            # predicted a 0
-            pred = 0
-            actual = inp[2]
-            matr[pred][actual] += 1
         else:
             valclass1 += [a3]
+
+    test0, test1 = GenerateData()
+    testData = formatData(test0, test1)
+    test_error = 0
+
+    testclass0 = []
+    testclass1 = []
+
+    matrix = np.array([ [0,0], [0,0]])
+
+
+    for inp in testData:
+        a1, a2, a3 = forwardProp(T1, T2, [inp[0], inp[1]],numofnodes)
+        tmp, test_error = backwardProp(a2, a3, T2, inp[2])
+
+        if (a3 < 0.5):
+            testclass0 += [a3]
+            pred = 0
+            actual = inp[2]
+            matrix[pred][actual]+=1
+        else:
+            testclass1 += [a3]
             pred = 1
             actual = inp[2]
-            matr[pred][actual] += 1
+            matrix[pred][actual]+=1
 
-    print('\n')
-    print('Confusion Matrix:')
-    print(matr)
-    print('Training Error: ' + str(train_error[0]+1))
-    print('Validation Error: ' + str(valid_error[0] + 1))
+
+    print("confusion matrix")
+    print("\n")
+    print(matrix)
+    print("\n")
+    print((train_error[0] + 1) -  (test_error[0]+1))
