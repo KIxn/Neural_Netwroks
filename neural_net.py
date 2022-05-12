@@ -89,15 +89,48 @@ def formatData(class0, class1):
 
 if __name__ == '__main__':
     class0, class1 = GenerateData()
-    # plot(class0,class1)
+    # question 2
+    #plot(class0, class1)
 
     # set weights
     T1 = np.random.rand(2, 3)
     T2 = np.random.rand(1, 3)
     data = formatData(class0, class1)
 
+    # 3b
+    a1, a2, a3 = forwardProp(T1, T2, [data[4][0], data[4][1]])
+    print('Forward Propagation:')
+    print('a1: ' + str(a1))
+    print('a2: ' + str(a2))
+    print('a3: ' + str(a3))
+
+    # 3c
+    g2, g3 = backwardProp(a2, a3, T2, data[4][2])
+    print('\n')
+    print('Backward Propagation:')
+    print('g3: ' + str(g3))
+    print('g2: ' + str(g2[0]))
+
     grad = [0, 0]
+
+    # 3e
+    grad = incrementGrad(grad, a1, a2, g2, g3)
+    print('\n')
+    print('Gradient Cumputation:')
+    print('grad: ' + str(grad))
+
+    # 3f
+    print('\n')
+    print('Original Weights:')
+    print('Θ1: ' + str(T1))
+    print('Θ2: ' + str(T2))
+    T1, T2 = updateWeight(T1, T2, grad, 0.1)
+    print('Updated Weights:')
+    print('Θ1: ' + str(T1))
+    print('Θ2: ' + str(T2))
+
     # training model
+    # 3g
     eps = 0.05
 
     theta_prev = T2
@@ -122,6 +155,10 @@ if __name__ == '__main__':
 
         theta_prev = T2
 
+    print('\n')
+    print('Training Error: ' + str(train_error[0]+1))
+
+    #3h
     valid0, valid1 = GenerateData()
     validData = formatData(valid0, valid1)
     valid_error = 0
@@ -129,15 +166,21 @@ if __name__ == '__main__':
     valclass0 = []
     valclass1 = []
 
+    # confusion matrix
+    matr = np.array([[0, 0], [0, 0]])
+
     for inp in validData:
         a1, a2, a3 = forwardProp(T1, T2, [inp[0], inp[1]])
         tmp, valid_error = backwardProp(a2, a3, T2, inp[2])
 
         if (a3 < 0.5):
             valclass0 += [a3]
+            # predicted a 0
+            pred = 0
+            actual = inp[2]
+            matr[pred][actual] += 1
         else:
             valclass1 += [a3]
-
-    print(train_error[0] + 1)
-    print("\n")
-    print(valid_error[0]+1)
+            pred = 1
+            actual = inp[2]
+            matr[pred][actual] += 1
